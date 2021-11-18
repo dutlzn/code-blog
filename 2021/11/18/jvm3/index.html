@@ -4,11 +4,9 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="JVM-垃圾回收机制, 呆冰IceMan">
-    <meta name="description" content="垃圾回收机制一个方法执行完毕，栈帧出栈，栈帧里的局部变量里不存在相关变量和方法记录。
-出现一个情况：此时没有一个变量指向Java堆内存里实例对象。
-堆内存里存放实例对象，是占用内存资源的，内存资源又是有限的，因而有垃圾回收的需求。
-创建的对">
+    <meta name="keywords" content="jvm-年轻代、老年代垃圾回收算法, 呆冰IceMan">
+    <meta name="description" content="年轻代垃圾回收算法年轻代的内存分为两块如果根据GC roots 标记哪些对象可以被垃圾回收 就直接对那块内存区域中的对象进行垃圾回收，容易造成内区东一块 西一块，大量的内存碎片。
+内存碎片会造成内存浪费。容易导致没有足够的空间来分配新的对象">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -20,7 +18,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>JVM-垃圾回收机制 | 呆冰IceMan</title>
+    <title>jvm-年轻代、老年代垃圾回收算法 | 呆冰IceMan</title>
     <link rel="icon" type="image/png" href="/code-blog/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/code-blog/libs/awesome/css/all.min.css">
@@ -312,12 +310,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/19.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/0.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">JVM-垃圾回收机制</h1>
+                    <h1 class="description center-align post-title">jvm-年轻代、老年代垃圾回收算法</h1>
                 </div>
             </div>
         </div>
@@ -486,55 +484,47 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="垃圾回收机制"><a href="#垃圾回收机制" class="headerlink" title="垃圾回收机制"></a>垃圾回收机制</h1><p>一个方法执行完毕，栈帧出栈，栈帧里的局部变量里不存在相关变量和方法记录。</p>
-<p>出现一个情况：<strong>此时没有一个变量指向Java堆内存里实例对象。</strong></p>
-<p>堆内存里存放实例对象，是占用内存资源的，内存资源又是有限的，因而有垃圾回收的需求。</p>
-<p><strong>创建的对象，在java堆内存里会占用多少内存</strong>： 对象头+数据 对象头一般是16字节，存储对象本身的信息；数据是对象实例变量作为数据也占用了空间。</p>
-<p>jvm垃圾回收线程是后台自动运行的线程</p>
-<h1 id="内存分代模型"><a href="#内存分代模型" class="headerlink" title="内存分代模型"></a>内存分代模型</h1><p><strong>在我们写的java代码中，存活周期很短的对象占了很大的比例</strong>。少数对象是长期存活的。比如用static修饰的变量，这个变量就是长期存活的。</p>
-<p>Java堆内存氛围：</p>
+                <h1 id="年轻代垃圾回收算法"><a href="#年轻代垃圾回收算法" class="headerlink" title="年轻代垃圾回收算法"></a>年轻代垃圾回收算法</h1><h2 id="年轻代的内存分为两块"><a href="#年轻代的内存分为两块" class="headerlink" title="年轻代的内存分为两块"></a>年轻代的内存分为两块</h2><p>如果根据GC roots 标记哪些对象可以被垃圾回收 就直接对那块内存区域中的对象进行垃圾回收，容易造成内区东一块 西一块，大量的内存碎片。</p>
+<p>内存碎片会造成内存浪费。容易导致没有足够的空间来分配新的对象。很多内存碎片没法使用。</p>
+<p>可以把新生代的内存区域分为两块，把存活的对象转移到另一块空白的内存中。然后把需要清理的垃圾一块清理掉，这样可以避免内存碎片的产生。</p>
+<p><strong>按照这种方式，两块内存区域这么重复循环使用</strong>。</p>
+<p><strong>缺点：只有一半的内存空间可以使用，对内存使用效率太低了。</strong></p>
+<h2 id="复制算法的优化-Eden-Survivor"><a href="#复制算法的优化-Eden-Survivor" class="headerlink" title="复制算法的优化 Eden Survivor"></a>复制算法的优化 Eden Survivor</h2><p>一次垃圾回收过后，大部分对象都要回收。</p>
+<p><strong>这里存在一个假设，每次只有少量对象可以存活下来。</strong></p>
+<p>可以把年轻代分为80%的Eden， 两个20%的Survivor区域</p>
+<p>刚开始对象都是分配在Eden，如果Eden满了，就会触发垃圾回收。</p>
+<p>Eden存活对象一次性转移到Survivor，Survivor存放的是上一次Young GC后婚活的对象。</p>
+<p>如果Eden又满了，Eden再一次Young GC存活的对象和上一次存活的对象转移到另一块Survivor中。 </p>
+<p><strong>好处：只有10%的内存空间是被闲置的。90%的内存空间都是被利用的。</strong></p>
+<p>当新生代的对象躲过了新生代垃圾回收15次（这个参数可以自己设定）</p>
+<p>未来能更好适应不同程序的内存状况，虚拟机并不总是要求对象的年龄必须到达阈值，才能晋升老年代。</p>
+<p><strong>动态对象年龄判定</strong>：如果Survivor区域中相同年龄所有对象大小的综合大于Survivor内存大小的一半，年龄大于等于该年龄的对象就可以直接进入老年代。</p>
+<p><strong>大对象直接进入老年代</strong>：-XX:PretenureSizeThreshold 避免大对象在内存里来回复制，耗费时间</p>
+<p><strong>经历过多次Young GC之后，对象变得很多，无法放入另一块Survivor，这个时候需要把这些对象直接转移到老年代</strong>。</p>
+<h2 id="老年代空间分配担保原则"><a href="#老年代空间分配担保原则" class="headerlink" title="老年代空间分配担保原则"></a>老年代空间分配担保原则</h2><p>如果年轻代大量对象存活下来，Survivor区域放不去，老年代区域也放不下该咋办？</p>
+<p><strong>执行YoungGC之前，JVM会检查老年代的可用内存空间大小是否大于年轻代所有对象的总大小。</strong></p>
 <ul>
-<li>年轻代： 很快就要被回收的对象</li>
-<li>老年代：长期存在的对象</li>
+<li>如果老年代可用内存空间大小大于新生代所有对象，可以放心Young GC 。大不了全部放在老年代里。</li>
+<li>如果发现老年代空间不够：<ul>
+<li>查看-XX:- HandlePromotionFailure 参数是否设置</li>
+<li>如果参数已经被设置了，若<strong>老年代的内存大小大于之前每一次Young GC后进入老年代的对象的平均大小</strong>，那么老年代空间是够的。</li>
+<li>参数没有设置或者参数设置发现还是不够，就会触发Full GC</li>
 </ul>
-<p><strong>static变量存储在方法区</strong></p>
-<h2 id="方法区的类被回收的条件："><a href="#方法区的类被回收的条件：" class="headerlink" title="方法区的类被回收的条件："></a>方法区的类被回收的条件：</h2><ul>
-<li> 首先该类的所有实例对象都已经从Java堆内存里被回收</li>
-<li> 其次加载这个类的ClassLoader已经被回收</li>
-<li> 最后，对该类的Class对象没有任何引用</li>
+</li>
 </ul>
-<p> 满足上面三个条件就可以回收该类了。</p>
-<p>如果年轻代里要去分配一个对象，发现没有足够空间了，可能会触发Young GC，把新生代里没有人引用的垃圾对象，都给回收掉。</p>
-<p>长期存活的对象会躲过多次垃圾回收（15次），转移到老年代。</p>
-<p>栈帧里的局部变量不需要jvm额外垃圾回收，方法执行完，直接出栈，局部变量直接从内存里清理掉了。</p>
-<p><strong>jvm垃圾回收针对的是年轻代、老年代、方法区，不针对栈帧。</strong></p>
-<h2 id="哪些变量引用的对象是不嫩会输的"><a href="#哪些变量引用的对象是不嫩会输的" class="headerlink" title="哪些变量引用的对象是不嫩会输的"></a>哪些变量引用的对象是不嫩会输的</h2><p>当新生代快满的时候，需要进行垃圾回收了。需要判断哪些对象可以被回收，哪些对象不能被回收</p>
-<p>jvm通过<strong>可达性分析</strong>来判定一个对象是否可以被回收。</p>
-<p>对每一个对象，都分析一下有谁在引用他，然后逐层判断，看是否有GC roots。<strong>局部变量可以作为GC roots</strong>。 <strong>有GCroots 的对象是不能被回收的，如果对象被方法的局部变量、类i静态变量引用了，就不会被回收</strong>。</p>
-<h1 id="Java中对象不同的引用类型"><a href="#Java中对象不同的引用类型" class="headerlink" title="Java中对象不同的引用类型"></a>Java中对象不同的引用类型</h1><p>强引用、弱引用、虚引用、软引用</p>
-<h2 id="强引用"><a href="#强引用" class="headerlink" title="强引用"></a>强引用</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java">public static A a &#x3D; new A();<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
-
-<p>很普遍的形式，一个变量引用一个对象。<strong>只要是强引用的类型， 那么垃圾回收的时候绝对不会去回收这个对象</strong></p>
-<h2 id="软引用"><a href="#软引用" class="headerlink" title="软引用"></a>软引用</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java">static class SoftObject &#123;
-    byte[] data &#x3D; new byte[50 * 1024 * 1024];
-&#125;
-
-public static void main(String[] args) &#123;
-    SoftReference&lt;SoftObject&gt; reference &#x3D; new SoftReference&lt;&gt;(new SoftObject());
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
-
-<p>正常情况下垃圾回收是不会回收软引用对象的。但是如果发现内存空间还是不够的话，就会把软引用对象给回收掉。</p>
-<h2 id="弱引用"><a href="#弱引用" class="headerlink" title="弱引用"></a>弱引用</h2><pre class="line-numbers language-java" data-language="java"><code class="language-java">String str&#x3D;new String(&quot;abc&quot;);
-WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(str)<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-
-
-<p><strong>弱引用</strong>就类似于没有引用，如果发生垃圾回收，就会把这个对象回收掉。</p>
-<h1 id="finalize-方法"><a href="#finalize-方法" class="headerlink" title="finalize()方法"></a>finalize()方法</h1><pre class="line-numbers language-java" data-language="java"><code class="language-java">protected void finalize() throws Throwable &#123; &#125;
-&#125;<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
-
-<p>一旦垃圾回收器准备好释放对象占用的内存空间，将首先调用finalize()方法，并且在下一次垃圾回收动作发生的时候，才会真正回收对象占用的内存。</p>
-
+<h2 id="Young-GC满足条件"><a href="#Young-GC满足条件" class="headerlink" title="Young GC满足条件"></a>Young GC满足条件</h2><p>两个步骤：</p>
+<ul>
+<li>老年代内存&gt;新生代</li>
+<li>老年代内存&gt;Young GC转移平均大小</li>
+</ul>
+<p>这两个条件都满足了。可以尝试Young GC</p>
+<h2 id="Young-GC的可能结果"><a href="#Young-GC的可能结果" class="headerlink" title="Young GC的可能结果"></a>Young GC的可能结果</h2><ol>
+<li>YoungGC 过后，年轻代所有存活对象是小于Survivor区域大小。那么存活对象进入Survivor区域</li>
+<li>YoungGC之后，年轻代所有存活对象是大于Survivor区域大小的，但是小于老年代区域。就进入老年代</li>
+<li>YoungGC之后，年轻代&gt;survivor 而且老年代也不够。触发FullGC</li>
+</ol>
+<p>Full GC 不仅对老年代进行垃圾回收，也会对年轻代进行垃圾回收。Full GC失败就会报OOM异常。</p>
+<h1 id="老年代垃圾回收算法"><a href="#老年代垃圾回收算法" class="headerlink" title="老年代垃圾回收算法"></a>老年代垃圾回收算法</h1>
                 
             </div>
             <hr/>
@@ -560,7 +550,7 @@ WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(st
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm2/">https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm2/</a>
+                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm3/">https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm3/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -775,9 +765,10 @@ WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(st
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
                 <a href="/code-blog/2021/11/18/jvm3/">
                     <div class="card-image">
@@ -795,9 +786,9 @@ WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(st
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-18
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-18
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
@@ -810,6 +801,7 @@ WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(st
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -832,13 +824,13 @@ WeakReference&lt;String&gt; abcWeakRef &#x3D; new WeakReference&lt;String&gt;(st
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/code-blog/2021/11/18/jvm1/">
+                <a href="/code-blog/2021/11/18/jvm2/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/17.jpg" class="responsive-img" alt="JVM基础(类加载、内存区域)">
+                        <img src="/code-blog/medias/featureimages/19.jpg" class="responsive-img" alt="JVM-垃圾回收机制">
                         
-                        <span class="card-title">JVM基础(类加载、内存区域)</span>
+                        <span class="card-title">JVM-垃圾回收机制</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
