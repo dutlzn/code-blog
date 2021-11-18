@@ -4,10 +4,8 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="测试图片, 呆冰IceMan">
-    <meta name="description" content="测试图片测试
-
-">
+    <meta name="keywords" content="JVM基础(类加载、内存区域), 呆冰IceMan">
+    <meta name="description" content="类加载过程一个类从加载到使用，一般会经历下面的这个过程：加载 -&amp;gt; 验证 -&amp;gt; 准备 -&amp;gt; 解析 -&amp;gt; 初始化 -&amp;gt; 使用 -&amp;gt; 卸载当要用到某个类的时候，将.class字节码文件中加载这个类到JVM内存">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -19,7 +17,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>测试图片 | 呆冰IceMan</title>
+    <title>JVM基础(类加载、内存区域) | 呆冰IceMan</title>
     <link rel="icon" type="image/png" href="/code-blog/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/code-blog/libs/awesome/css/all.min.css">
@@ -311,12 +309,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/11.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/17.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">测试图片</h1>
+                    <h1 class="description center-align post-title">JVM基础(类加载、内存区域)</h1>
                 </div>
             </div>
         </div>
@@ -432,8 +430,12 @@
                     
                     <div class="article-tag">
                         
-                            <a href="/code-blog/tags/%E6%B5%8B%E8%AF%95/">
-                                <span class="chip bg-color">测试</span>
+                            <a href="/code-blog/tags/java/">
+                                <span class="chip bg-color">java</span>
+                            </a>
+                        
+                            <a href="/code-blog/tags/jvm/">
+                                <span class="chip bg-color">jvm</span>
                             </a>
                         
                     </div>
@@ -444,8 +446,8 @@
                     <div class="post-cate">
                         <i class="fas fa-bookmark fa-fw icon-category"></i>
                         
-                            <a href="/code-blog/categories/%E6%B5%8B%E8%AF%95/" class="post-category">
-                                测试
+                            <a href="/code-blog/categories/jvm/" class="post-category">
+                                jvm
                             </a>
                         
                     </div>
@@ -481,9 +483,55 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="测试"><a href="#测试" class="headerlink" title="测试"></a>测试</h1><p>图片测试</p>
-<p><img src="/test/aaa.jpg"></p>
-<img src="/code-blog/2021/11/18/test/aaa.jpg" class="" title="[title]">
+                <h1 id="类加载过程"><a href="#类加载过程" class="headerlink" title="类加载过程"></a>类加载过程</h1><p>一个类从加载到使用，一般会经历下面的这个过程：<br><strong>加载 -&gt; 验证 -&gt; 准备 -&gt; 解析 -&gt; 初始化 -&gt; 使用 -&gt; 卸载</strong><br>当要用到某个类的时候，将.class字节码文件中加载这个类到JVM内存中<br>验证：确认字节码文件是规范的<br>准备： 给类分配内存空间。static修饰的变量分配内存空间+初始值0<br>解析阶段：实际上是把符号引用替换为直接引用的过程<br><strong>解析阶段因为这个阶段是给加载进来的类分配好了内存空间，类变量也分配好了内存空间，并且给了默认的初始值 准备阶段开辟内存空间+初始化0 初始化 真正的赋值</strong></p>
+<p>初始化类的时间：<br>1 new 对象（）  实例化：触发类的加载到初始化的全过程，把类准备好，再实例化一个对象<br>2 包含main（）方法的主类 必须是立马初始化的</p>
+<p>如果初始化一个类，它的父类还没有初始化，那么必须初始化它的父类</p>
+<h1 id="类加载器"><a href="#类加载器" class="headerlink" title="类加载器"></a>类加载器</h1><p>类加载器 ：</p>
+<ul>
+<li>启动类加载器 Bootstrap ClassLoader，它主要是负责加载机器上安装的Java目录下的核心类的 java 安装目录lib</li>
+<li>扩展类加载器 Extension ClassLoader，这个类加载器其实也是类似的， Java安装目录下，有一个“lib\ext”目录</li>
+<li>应用类程序类加载器  ClassPath环境变量所制定的路径中的类 ： 也可以理解为自己写好的java代码</li>
+<li>自定义类加载器</li>
+</ul>
+<h1 id="双亲委派机制"><a href="#双亲委派机制" class="headerlink" title="双亲委派机制"></a>双亲委派机制</h1><p>类加载器有亲子层级结构：</p>
+<p><strong>启动类加载器-&gt;扩展类加载器-&gt;应用程序类加载器-&gt;自定义类加载器</strong></p>
+<p>假设应用程序类加载器需要加载一个类，首先会委派给自己的父类加载器去加载，最终传导到顶层的类加载器去加载。但是如果父类加载器在自己负责加载的范围内，没找到这个类，那么就会下推加载权利给自己的子类加载器。</p>
+<p>总结：<strong>先找父亲去加载，不能加载再找儿子去加载。</strong></p>
+<img src="/code-blog/2021/11/18/jvm1/1.PNG" class="">
+
+<h1 id="内存区域"><a href="#内存区域" class="headerlink" title="内存区域"></a>内存区域</h1><p>jvm有不同的内存空间，不同的内存空间存放不同的数据。</p>
+<ul>
+<li>方法区：<ul>
+<li><a target="_blank" rel="noopener" href="https://www.cnblogs.com/duanxz/p/3728737.html">https://www.cnblogs.com/duanxz/p/3728737.html</a></li>
+<li>存在类相关信息 常量 </li>
+</ul>
+</li>
+<li>程序计数器：<ul>
+<li>java代码会被翻译成字节码，对应各种字节码指令</li>
+<li>jvm加载类的信息到内存，用字节码执行引擎去执行编译指令</li>
+<li>程序计数器可以记录当前执行的字节码指令的位置</li>
+<li>jvm支持多线程，每个线程都有自己的程序计数器</li>
+<li>main线程 -&gt; main线程的程序计数器</li>
+</ul>
+</li>
+<li>虚拟机栈：<ul>
+<li>虚拟机栈用来保存方法内局部变量等数据</li>
+<li>每个线程都有自己的虚拟机栈</li>
+<li>线程执行，建立对应的栈帧，栈帧里面就有方法的局部变量、方法出口、动态链接、操作数栈等东西</li>
+<li>调用任何方法，给方法创建栈帧，然后入栈，方法执行完毕之后，就会出栈</li>
+</ul>
+</li>
+<li>堆内存：<ul>
+<li>存放在代码中创建的各种对象。例如A a = new A()  a就是属于对象实例的一个数据</li>
+<li><strong>执行某些方法的时候，会在堆内存中创建对象，然后虚拟机栈中栈帧的局部变量表里某一个局部变量会引用堆内存中的对象，存放对象的地址</strong></li>
+</ul>
+</li>
+<li>其他内存区域：<ul>
+<li>native方法调用本地操作系统里面的一些方法，类似虚拟机栈，调用native方法会创建本地方法栈。</li>
+</ul>
+</li>
+</ul>
+
                 
             </div>
             <hr/>
@@ -509,7 +557,7 @@
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/18/test/">https://dutlzn.github.io/code-blog/code-blog/2021/11/18/test/</a>
+                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm1/">https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm1/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -547,8 +595,12 @@
                     
                         <div class="article-tag">
                             
-                                <a href="/code-blog/tags/%E6%B5%8B%E8%AF%95/">
-                                    <span class="chip bg-color">测试</span>
+                                <a href="/code-blog/tags/java/">
+                                    <span class="chip bg-color">java</span>
+                                </a>
+                            
+                                <a href="/code-blog/tags/jvm/">
+                                    <span class="chip bg-color">jvm</span>
                                 </a>
                             
                         </div>
@@ -720,9 +772,10 @@
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
                 <a href="/code-blog/2021/11/18/jvm1/">
                     <div class="card-image">
@@ -740,9 +793,9 @@
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-18
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-18
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
@@ -755,6 +808,7 @@
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -777,13 +831,13 @@
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/code-blog/2021/11/18/hello-world/">
+                <a href="/code-blog/2021/11/18/test/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/12.jpg" class="responsive-img" alt="Hello World">
+                        <img src="/code-blog/medias/featureimages/11.jpg" class="responsive-img" alt="测试图片">
                         
-                        <span class="card-title">Hello World</span>
+                        <span class="card-title">测试图片</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -798,11 +852,23 @@
                             </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            呆冰IceMan
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/code-blog/categories/%E6%B5%8B%E8%AF%95/" class="post-category">
+                                    测试
+                                </a>
+                            
                             
                         </span>
                     </div>
+                </div>
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/code-blog/tags/%E6%B5%8B%E8%AF%95/">
+                        <span class="chip bg-color">测试</span>
+                    </a>
+                    
                 </div>
                 
             </div>
