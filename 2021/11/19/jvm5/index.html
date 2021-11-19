@@ -519,7 +519,28 @@ G1将java堆内存分成多个大小相等的Region
 <h2 id="新生代还有Eden和Survivor的概念吗"><a href="#新生代还有Eden和Survivor的概念吗" class="headerlink" title="新生代还有Eden和Survivor的概念吗"></a>新生代还有Eden和Survivor的概念吗</h2><p>G1把内存划分为了很多的Region， 但是还是有很多新生代、老年代，新生代里也有Eden Survivor划分的 之前的一些原理也适用于G1</p>
 <p>比如新生代有100个Region 其中80个是Eden 两个Survivor 各自占10个。这个比例也是通过手动设置参数来设定的</p>
 <p>随着对象不停的在新生代里分配，属于新生代的Region 会不断增加变化。Eden Survivor所对应的Region 也会不断增加</p>
-<h2 id="G1新生代垃圾回收"><a href="#G1新生代垃圾回收" class="headerlink" title="G1新生代垃圾回收"></a>G1新生代垃圾回收</h2><p><code>config_yaml</code>G1 新生代也有Eden Survivor 的区分， 所以触发垃圾回收的机制类似的</p>
+<h2 id="G1新生代垃圾回收"><a href="#G1新生代垃圾回收" class="headerlink" title="G1新生代垃圾回收"></a>G1新生代垃圾回收</h2><p>G1 新生代也有Eden Survivor 的区分， 所以触发垃圾回收的机制类似的。一旦新生代达到了设定的占据堆内存最大大小60%，这个时候会触发新生代的GC，G1就会用复制算法来进行垃圾回收。然后把Eden对应的Region中的存活对象放入S1对应的Region中，接着回收掉Eden对应的Region中的垃圾对象。</p>
+<p>这个过程中还是和之前的新生代垃圾回收有一些区别：</p>
+<blockquote>
+<p>G1可以设定目标GC停顿时间的，也就是G1执行GC的时候最多可以让系统停顿多长时间<br>可以通过参数来设定</p>
+</blockquote>
+<blockquote>
+<p>G1会对每个Region进行追踪回收，可以回收多少对象来选择回收一部分的Region，保证GC停顿时间控制在指定范围内，尽可能多回收掉一些对象</p>
+</blockquote>
+<h2 id="对象什么时候进入老年代"><a href="#对象什么时候进入老年代" class="headerlink" title="对象什么时候进入老年代"></a>对象什么时候进入老年代</h2><blockquote>
+<p>对象在新生代躲过了很多次的垃圾回收，达到了一定的年纪了，就会进入老年代，可以通过参数来设置<br>动态年龄判定规则，如果一旦发现某次新生代GC之后，存活对象超过了Survivor的50%<br>此时就会判断一下，比如年龄为1岁，2岁，3岁，4岁的对象的大小总和超过了Survivor的50%，此时4岁以上的对象全部会进入老年代，这就是动态年龄判定规则</p>
+</blockquote>
+<h2 id="大对象Region"><a href="#大对象Region" class="headerlink" title="大对象Region"></a>大对象Region</h2><p>G1提供了专门的Region存放大对象，而不是让大对象进入老年代的Region中<br>大对象的判定规则是 大对象超过了一个Region的50%。如果大对象实在太大，可以横跨多个Region来存储<br>新生代、老年代是不断变化的，这个变化过程中有一些region腾出来了就可以存放大对象。<br>新生代、老年代在进行垃圾回收的时候，会带着大对象Region一起回收。</p>
+<h2 id="什么时候触发新生代-老年代混合垃圾回收"><a href="#什么时候触发新生代-老年代混合垃圾回收" class="headerlink" title="什么时候触发新生代+老年代混合垃圾回收"></a>什么时候触发新生代+老年代混合垃圾回收</h2><p>有一个参数可以设置 比如设置45%  -XX:InitiatingHeapOccupancyPercent。如果老年代占据了堆内存的45%的Region的时候，此时就会尝试触发一次新生代+老年代的混合回收阶段</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><blockquote>
+<p>G1动态内存管理策略 会根据情况动态把Region分配给新生代、Eden、Survivor、老年代和大对象Region<br>但是新生代和老年代有一个各自的最大占比，然后在新生代的Eden满的时候，会触发新生代的GC<br>新生代的垃圾回收还是采用复制算法，只不过会考虑停顿时间，保证垃圾回收的停顿时间不会超过预设值，通过手动输入的参数来决定每次GC停顿时间。这样就会导致每次GC只会挑选一部分Region去进行垃圾回收，追踪回收，多少大小、耗时多少综合决定是否回收这个Region<br>新生代对象如何进入老年代： 动态年龄判定 新生代对象躲过了15次新生代的垃圾回收，就进入老年代， 后者 新生代存活对象在Survivor放不下了<br>大对象直接进入单独的Region 不再进入老年代</p>
+</blockquote>
+<h1 id="G1垃圾回收过程"><a href="#G1垃圾回收过程" class="headerlink" title="G1垃圾回收过程"></a>G1垃圾回收过程</h1><ul>
+<li><code>初始标记</code>，这个阶段，暂停系统工作线程，标记GC roots直接引用的对象。这个过程速度很快<code>先停止系统程序的运行</code>，然后对各个线程栈内存中的局部变量的GC roots，以及方法区中的类静态变量代表的GC roots进行扫描，标记出来它们直接引用哪些对象</li>
+<li><code>并发标记</code>：这个阶段允许系统程序的运行，同时进行GC roots追踪,从GC roots开始追踪所有存活对象。这个过程很耗时，因为要追踪所有存活对象。但是这个阶段是可以跟系统工作线程并发运行的，所以对系统程序的影响不大。</li>
+<li><code>最终标记阶段</code>：这个阶段暂停系统工作线程，根据并发标记记录的哪些对象修改，最终标记一下有哪些存活对象，有哪些是垃圾对象。</li>
+<li><code>混合回收</code>：这个阶段会计算老年代中每个Region中的存活对象数量，存活对象的占比，还有执行垃圾回收的预期性能和效率。接着会停止系统程序，然后全力以赴尽快进行垃圾回收，此时会选择部分Region进行回收，因为必须让垃圾回收的停顿时间控制在我们指定的范围内。老年代对堆内存占比达到45%的时候，触发的是“混合回收”也就是说，此时垃圾回收不仅仅是回收老年代，还会回收新生代，还会回收大对象。</li>
+</ul>
 
                 
             </div>
@@ -761,17 +782,18 @@ G1将java堆内存分成多个大小相等的Region
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
-                <a href="/code-blog/2021/11/19/markdown/">
+                <a href="/code-blog/2021/11/19/jvm5/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/13.jpg" class="responsive-img" alt="好看的Markdown模板">
+                        <img src="/code-blog/medias/featureimages/16.jpg" class="responsive-img" alt="jvm-垃圾回收器之G1 GC">
                         
-                        <span class="card-title">好看的Markdown模板</span>
+                        <span class="card-title">jvm-垃圾回收器之G1 GC</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -781,16 +803,33 @@ G1将java堆内存分成多个大小相等的Region
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
+                            </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-user fa-fw"></i>
-                            呆冰IceMan
+                            <i class="fas fa-bookmark fa-fw icon-category"></i>
+                            
+                            <a href="/code-blog/categories/jvm/" class="post-category">
+                                    jvm
+                                </a>
+                            
                             
                         </span>
                     </div>
+                </div>
+
+                
+                <div class="card-action article-tags">
+                    
+                    <a href="/code-blog/tags/java/">
+                        <span class="chip bg-color">java</span>
+                    </a>
+                    
+                    <a href="/code-blog/tags/jvm/">
+                        <span class="chip bg-color">jvm</span>
+                    </a>
+                    
                 </div>
                 
             </div>
@@ -1011,7 +1050,7 @@ G1将java堆内存分成多个大小相等的Region
                    loop='all'
                    order='random'
                    preload='auto'
-                   volume='0.7'
+                   volume='0.5'
                    list-folded='true'
         >
         </meting-js>
