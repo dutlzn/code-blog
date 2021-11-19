@@ -4,10 +4,14 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="jvm-垃圾回收器之ParNew和CMS, 呆冰IceMan">
-    <meta name="description" content="垃圾回收器ParNew、CMS和G1三种垃圾回收
+    <meta name="keywords" content="jvm-垃圾回收器之G1 GC, 呆冰IceMan">
+    <meta name="description" content="G1 垃圾回收器的基本原理ParNew + CMS组合有哪些不足最大的问题在于会暂停系统工作线程，会影响系统的性能
+G1 垃圾回收器
+G1可以同时回收老年代和新生代 
 
-Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的垃圾对象 .工作原理就是单线程运行，垃圾回收的时候会停止我们自己写的系统的其他工作线程，让我们系统直接卡死不动，然">
+G1将java堆内存分成多个大小相等的Region
+
+然后G1也会有新">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -19,7 +23,7 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>jvm-垃圾回收器之ParNew和CMS | 呆冰IceMan</title>
+    <title>jvm-垃圾回收器之G1 GC | 呆冰IceMan</title>
     <link rel="icon" type="image/png" href="/code-blog/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/code-blog/libs/awesome/css/all.min.css">
@@ -311,12 +315,12 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/14.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/16.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">jvm-垃圾回收器之ParNew和CMS</h1>
+                    <h1 class="description center-align post-title">jvm-垃圾回收器之G1 GC</h1>
                 </div>
             </div>
         </div>
@@ -485,89 +489,37 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="垃圾回收器"><a href="#垃圾回收器" class="headerlink" title="垃圾回收器"></a>垃圾回收器</h1><p>ParNew、CMS和G1三种垃圾回收</p>
-<ol>
-<li><p>Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的垃圾对象 .工作原理就是单线程运行，垃圾回收的时候会停止我们自己写的系统的其他工作线程，让我们系统直接卡死不动，然 后让他们垃圾回收，这个现在一般写后台Java系统几乎不用。</p>
+                <h1 id="G1-垃圾回收器的基本原理"><a href="#G1-垃圾回收器的基本原理" class="headerlink" title="G1 垃圾回收器的基本原理"></a>G1 垃圾回收器的基本原理</h1><h2 id="ParNew-CMS组合有哪些不足"><a href="#ParNew-CMS组合有哪些不足" class="headerlink" title="ParNew + CMS组合有哪些不足"></a>ParNew + CMS组合有哪些不足</h2><p>最大的问题在于会暂停系统工作线程，会影响系统的性能</p>
+<h2 id="G1-垃圾回收器"><a href="#G1-垃圾回收器" class="headerlink" title="G1 垃圾回收器"></a>G1 垃圾回收器</h2><ul>
+<li><p>G1可以同时回收老年代和新生代 </p>
 </li>
-<li><p>ParNew和CMS垃圾回收器：ParNew现在一般都是用在新生代的垃圾回收器，CMS是用在老年代的垃圾回收器，他们都是多线程并发的机制，性能更好，现在一般是线上生产系统的标配组合</p>
+<li><p>G1将java堆内存分成多个大小相等的Region</p>
 </li>
-<li><p>G1垃圾回收器：统一收集新生代 和老年代，采用了更加优秀的算法和设计机制</p>
+<li><p>然后G1也会有新生代和老年代的概念，但是只不过是逻辑上的概念</p>
 </li>
-</ol>
-<h3 id="最常用的新生代垃圾回收器-ParNew"><a href="#最常用的新生代垃圾回收器-ParNew" class="headerlink" title="最常用的新生代垃圾回收器 ParNew"></a>最常用的新生代垃圾回收器 ParNew</h3><p>特点是多线程垃圾回收机制</p>
-<p>ParNew垃圾回收器如果一旦在合适的时机执行Young GC的时候，<strong>就会把系统程序的工作线程全部停掉</strong>，禁止程序继续运行创建新的对象，然后自己就用多个垃圾回收线程去进行垃圾回收。</p>
-<h1 id="ParNew"><a href="#ParNew" class="headerlink" title="ParNew"></a>ParNew</h1><p>ParNew是最常用的新生代垃圾回收器</p>
-<p><strong>在垃圾回收的时候，会把系统程序所有的工作线程全部停掉,可以多线程进行垃圾回收</strong>。</p>
-<p>Serial是主打单线程回收。</p>
-<p>大部分机器是多核的，垃圾回收的时候可以充分利用CPU的资源。</p>
-<p>默认给自己设置的垃圾回收线程数量和CPU核数一样。</p>
-<p>windows 机器  或者 CPU核心少的机器,建议使用Serial垃圾回收器，避免程序多开性能开销。</p>
-<p>部署程序用的多核服务器建议使用ParNew</p>
-<h1 id="CMS"><a href="#CMS" class="headerlink" title="CMS"></a>CMS</h1><p><strong>老年代垃圾回收器</strong></p>
-<p><strong>采用的是标记清理算法</strong></p>
-<p>发生时机:</p>
+<li><p>G1最大的特点就是，可以设置一个垃圾回收的预期停顿时间，可以直接控制垃圾回收对系统性能的影响</p>
+</li>
+</ul>
+<h2 id="G1如何做到对垃圾回收导致的系统停顿可控"><a href="#G1如何做到对垃圾回收导致的系统停顿可控" class="headerlink" title="G1如何做到对垃圾回收导致的系统停顿可控"></a>G1如何做到对垃圾回收导致的系统停顿可控</h2><p>针对每一个Region对其垃圾回收时间进行判断。必须要追踪每个Region里的回收价值。它必须搞清楚每个Region里的对象有多少是垃圾，如果对这个Region进行垃圾回收，需要耗费多长时间，可以回收掉多少垃圾？根据时间要求自己去决定去处理哪一个垃圾。</p>
+<h2 id="Region可能属于新生代也可能属于老年代"><a href="#Region可能属于新生代也可能属于老年代" class="headerlink" title="Region可能属于新生代也可能属于老年代"></a>Region可能属于新生代也可能属于老年代</h2><ul>
+<li>Region随时会属于新生代也会属于老年代，所以没有所谓新生代给多少内存，老年代给多少内存这一说了</li>
+<li>实际上新生代和老年代各自的内存区域是不停的变动的，由G1自动控制。</li>
+<li>Region动态转移给新生代或者老年代，按需分配</li>
+<li>触发垃圾回收的时候，可以根据设定的预期系统停顿时间，来选择最少回收时间和最多回收对象的Region进行垃圾回收，保证GC对系统停顿的影响在可控范围内，同时还能尽可能回收最多的对象</li>
+</ul>
+<h2 id="如何设定G1对应的内存大小"><a href="#如何设定G1对应的内存大小" class="headerlink" title="如何设定G1对应的内存大小"></a>如何设定G1对应的内存大小</h2><p>G1 对应的一大堆的Region内存区域，每个Region大小是一致的</p>
+<p>两个问题</p>
 <ul>
-<li>假设因为老年代内存空间小于了历次Young GC后升入老年代对象的平均大小，判断Young GC有风险，可能就会提前触发Full GC回收老年代的垃圾对象</li>
-<li>或者是一次Young GC后的对象太多了，都要升入老年代，发现空间不足，出发了一次老年代的Full GC</li>
+<li>有多少个Region</li>
+<li>每个Region大小是多少</li>
 </ul>
-<p>标记-清理算法 先通过追踪GC Roots的方法，看看各个对象是否被GC Roots给引用了，如果是的话，那就是存活对象，否则就是垃圾对象。是会造成很多内存碎片</p>
-<p><strong>CMS垃圾回收器采取的是垃圾回收线程和系统工作线程尽量同时执行的模式来处理的</strong></p>
-<h2 id="如何实现一边工作的同时进行垃圾回收"><a href="#如何实现一边工作的同时进行垃圾回收" class="headerlink" title="如何实现一边工作的同时进行垃圾回收"></a>如何实现一边工作的同时进行垃圾回收</h2><h3 id="CMS在执行一次垃圾回收的过程可以氛围4个阶段："><a href="#CMS在执行一次垃圾回收的过程可以氛围4个阶段：" class="headerlink" title="CMS在执行一次垃圾回收的过程可以氛围4个阶段："></a>CMS在执行一次垃圾回收的过程可以氛围4个阶段：</h3><ul>
-<li><p>初始标记</p>
-<ul>
-<li><p>这个阶段，会让系统的工作线程全部停止。</p>
-</li>
-<li><p>标记出来所有GC roots直接引用的对象</p>
-</li>
-<li><p>方法的局部变量和类的静态变量是GC roots, 但是类的实例变量不是</p>
-</li>
-<li><p>虽然暂停了一切工作线程，但是影响不大，因为它的速度很快，仅仅只是标记。</p>
-</li>
-<li><p>java中可以作为GC roots的对象</p>
-<ul>
-<li><p>虚拟机栈（栈帧中的本地变量表）中引用的对象</p>
-</li>
-<li><p>方法区中类静态属性引用的对象</p>
-</li>
-<li><p>方法区中常量引用的对象</p>
-</li>
-<li><p>本地方法栈中JNI（即一般说的native方法）中引用的对象</p>
-</li>
-</ul>
-</li>
-</ul>
-</li>
-<li><p>并发标记</p>
-<ul>
-<li>会让系统线程可以随意创建各种新对象</li>
-<li>在运行期间可能会创建新的存活对象，也可能会让部分存活对象失去引用，变成垃圾对象。在这个过程中，垃圾回收线程，会尽可能的对已有的对象进行GC Roots追踪</li>
-<li><strong>对老年代所有对象进行GC Roots追踪，其实是最耗时的</strong></li>
-<li>他需要追踪所有对象是否从根源上被GC Roots引用了，但是这个最耗时的阶段，是跟<strong>系统程序并发运行</strong>的，所以其实这个阶段不会对系统运行造成影响的</li>
-</ul>
-</li>
-<li><p>重新标记</p>
-<ul>
-<li><p>在第二个阶段里面，一边标记存活对象和垃圾对象，一边系统不停运行创建新对象，让老对象变成垃圾对象。<strong>第二阶段结束之后，有很多存活对象和垃圾对象，没有被标记</strong>。</p>
-</li>
-<li><p>此时，暂停所有系统工程线程 </p>
-</li>
-<li><p>重新标记下在第二阶段里新创建的一些对象，还有一些已有对象可能失去引用变成垃圾的情况</p>
-</li>
-<li><p>这个重新标记的阶段，是速度很快的，他其实就是对在第二阶段中被系统程序运行变动过的少数对象进行标记，所以运行速度很快</p>
-</li>
-</ul>
-</li>
-<li><p>并发清理</p>
-<ul>
-<li>恢复系统程序的运行</li>
-<li>清理掉之前标记为垃圾的对象</li>
-<li>这个阶段很耗时，但是跟系统程序并发运行。其实也不影响系统程序的执行</li>
-</ul>
-</li>
-</ul>
-<h2 id="CMS性能分析"><a href="#CMS性能分析" class="headerlink" title="CMS性能分析"></a>CMS性能分析</h2><p>最耗时的，其实就是对老年代全部对相关进行GC Roots追踪，标记出来到底哪些可以回收，然后就是对各种垃圾对象从内存里清理掉，这是最耗时的。</p>
-<p>但是他的第二阶段和第四阶段，都是和系统程序并发执行的，所以基本这两个最耗时的阶段对性能影响不大。</p>
-<p> 第一个阶段和第三个阶段是需要暂停所有系统工作线程的，但是这两个阶段都是简单的标记而已，速度非常的快，所以基本上对系统运行影响不大。</p>
+<p>JVM启动的时候一旦发现使用的是G1垃圾回收器，就会自动用堆大小2048。因为JVM最多可以有2048个Region Region的大小必须是2的倍数</p>
+<p>刚开始的时候，默认新生代堆内存的占比是5%，100个region 这个占比是可以通过设置参数来调整的</p>
+<p>在系统运行中，jvm会不停给新生代增加更多的Region，但是最多新生代的占比不会超过60%。这个最大也是可以通过参数来设置的。一旦Region进行了垃圾回收，此时新生代的Region数量还会减少，这些都是动态的</p>
+<h2 id="新生代还有Eden和Survivor的概念吗"><a href="#新生代还有Eden和Survivor的概念吗" class="headerlink" title="新生代还有Eden和Survivor的概念吗"></a>新生代还有Eden和Survivor的概念吗</h2><p>G1把内存划分为了很多的Region， 但是还是有很多新生代、老年代，新生代里也有Eden Survivor划分的 之前的一些原理也适用于G1</p>
+<p>比如新生代有100个Region 其中80个是Eden 两个Survivor 各自占10个。这个比例也是通过手动设置参数来设定的</p>
+<p>随着对象不停的在新生代里分配，属于新生代的Region 会不断增加变化。Eden Survivor所对应的Region 也会不断增加</p>
+<h2 id="G1新生代垃圾回收"><a href="#G1新生代垃圾回收" class="headerlink" title="G1新生代垃圾回收"></a>G1新生代垃圾回收</h2><p><code>config_yaml</code>G1 新生代也有Eden Survivor 的区分， 所以触发垃圾回收的机制类似的</p>
 
                 
             </div>
@@ -594,7 +546,7 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm4/">https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm4/</a>
+                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm5/">https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm5/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -803,9 +755,9 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
 
 <script type="text/javascript">
     disqus_config = function () {
-        this.page.url = 'https://dutlzn.github.io/code-blog/2021/11/19/jvm4/';
-        this.page.identifier = '/code-blog/2021/11/19/jvm4/';
-        this.page.title = 'jvm-垃圾回收器之ParNew和CMS';
+        this.page.url = 'https://dutlzn.github.io/code-blog/2021/11/19/jvm5/';
+        this.page.identifier = '/code-blog/2021/11/19/jvm5/';
+        this.page.title = 'jvm-垃圾回收器之G1 GC';
     };
     let disqus_shortname = '';
 
@@ -839,13 +791,13 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
             <div class="article-badge left-badge text-color">
                 <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
             <div class="card">
-                <a href="/code-blog/2021/11/19/jvm5/">
+                <a href="/code-blog/2021/11/19/markdown/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/16.jpg" class="responsive-img" alt="jvm-垃圾回收器之G1 GC">
+                        <img src="/code-blog/medias/featureimages/13.jpg" class="responsive-img" alt="好看的Markdown模板">
                         
-                        <span class="card-title">jvm-垃圾回收器之G1 GC</span>
+                        <span class="card-title">好看的Markdown模板</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -860,27 +812,11 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
                         </span>
                         <span class="publish-author">
                             
-                            <i class="fas fa-bookmark fa-fw icon-category"></i>
-                            
-                            <a href="/code-blog/categories/jvm/" class="post-category">
-                                    jvm
-                                </a>
-                            
+                            <i class="fas fa-user fa-fw"></i>
+                            呆冰IceMan
                             
                         </span>
                     </div>
-                </div>
-                
-                <div class="card-action article-tags">
-                    
-                    <a href="/code-blog/tags/java/">
-                        <span class="chip bg-color">java</span>
-                    </a>
-                    
-                    <a href="/code-blog/tags/jvm/">
-                        <span class="chip bg-color">jvm</span>
-                    </a>
-                    
                 </div>
                 
             </div>
@@ -892,13 +828,13 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/code-blog/2021/11/18/jvm3/">
+                <a href="/code-blog/2021/11/19/jvm4/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/0.jpg" class="responsive-img" alt="jvm-年轻代、老年代垃圾回收算法">
+                        <img src="/code-blog/medias/featureimages/14.jpg" class="responsive-img" alt="jvm-垃圾回收器之ParNew和CMS">
                         
-                        <span class="card-title">jvm-年轻代、老年代垃圾回收算法</span>
+                        <span class="card-title">jvm-垃圾回收器之ParNew和CMS</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
@@ -909,7 +845,7 @@ Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的�
                     </div>
                     <div class="publish-info">
                             <span class="publish-date">
-                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-18
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
                             </span>
                         <span class="publish-author">
                             

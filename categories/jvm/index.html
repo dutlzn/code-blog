@@ -365,11 +365,11 @@
                 
                 
                 
-                <a href="/code-blog/categories/jvm/" title="jvm: 4">
+                <a href="/code-blog/categories/jvm/" title="jvm: 5">
                     <span class="chip center-align waves-effect waves-light
                              chip-active "
                             style="background-color: #F9EBEA;">jvm
-                        <span class="tag-length">4</span>
+                        <span class="tag-length">5</span>
                     </span>
                 </a>
                 
@@ -384,6 +384,62 @@
 
     <article id="articles" class="container articles">
         <div class="row tags-posts">
+            
+            <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
+                <div class="card">
+                    <a href="/code-blog/2021/11/19/jvm5/">
+                        <div class="card-image tag-image">
+                            
+                            
+                            <img src="/code-blog/medias/featureimages/16.jpg" class="responsive-img" alt="jvm-垃圾回收器之G1 GC">
+                            
+                            <span class="card-title">jvm-垃圾回收器之G1 GC</span>
+                        </div>
+                    </a>
+                    <div class="card-content article-content">
+                        <div class="summary block-with-text">
+                            
+                                G1 垃圾回收器的基本原理ParNew + CMS组合有哪些不足最大的问题在于会暂停系统工作线程，会影响系统的性能
+G1 垃圾回收器
+G1可以同时回收老年代和新生代 
+
+G1将java堆内存分成多个大小相等的Region
+
+然后G1也会有新
+                            
+                        </div>
+                        <div class="publish-info">
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
+                            </span>
+                            <span class="publish-author">
+                                
+                                <i class="fas fa-bookmark fa-fw icon-category"></i>
+                                
+                                <a href="/code-blog/categories/jvm/" class="post-category">
+                                    jvm
+                                </a>
+                                
+                                
+                            </span>
+                        </div>
+                    </div>
+
+                    
+                    <div class="card-action article-tags">
+                        
+                        <a href="/code-blog/tags/java/">
+                            <span class="chip bg-color">java</span>
+                        </a>
+                        
+                        <a href="/code-blog/tags/jvm/">
+                            <span class="chip bg-color">jvm</span>
+                        </a>
+                        
+                    </div>
+                    
+                </div>
+            </div>
             
             <div class="article tag-post col s12 m6 l4" data-aos="zoom-in">
                 <div class="card">
@@ -841,6 +897,15 @@ $(function () {
 
     
 
+    
+        
+        <script type="text/javascript">
+            // 只在桌面版网页启用特效
+            var windowWidth = $(window).width();
+            if (windowWidth > 768) {
+                document.write('<script type="text/javascript" src="/code-blog/libs/others/sakura.js"><\/script>');
+            }
+        </script>
     
 
     <!-- 雪花特效 -->
