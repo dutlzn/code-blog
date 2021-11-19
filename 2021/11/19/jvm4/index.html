@@ -4,9 +4,10 @@
 
 <head>
     <meta charset="utf-8">
-    <meta name="keywords" content="jvm-年轻代、老年代垃圾回收算法, 呆冰IceMan">
-    <meta name="description" content="年轻代垃圾回收算法年轻代的内存分为两块如果根据GC roots 标记哪些对象可以被垃圾回收 就直接对那块内存区域中的对象进行垃圾回收，容易造成内区东一块 西一块，大量的内存碎片。
-内存碎片会造成内存浪费。容易导致没有足够的空间来分配新的对象">
+    <meta name="keywords" content="jvm-垃圾回收器之ParNew和CMS, 呆冰IceMan">
+    <meta name="description" content="垃圾回收器ParNew、CMS和G1三种垃圾回收
+
+Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的垃圾对象 .工作原理就是单线程运行，垃圾回收的时候会停止我们自己写的系统的其他工作线程，让我们系统直接卡死不动，然">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta name="renderer" content="webkit|ie-stand|ie-comp">
@@ -18,7 +19,7 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
 
 
-    <title>jvm-年轻代、老年代垃圾回收算法 | 呆冰IceMan</title>
+    <title>jvm-垃圾回收器之ParNew和CMS | 呆冰IceMan</title>
     <link rel="icon" type="image/png" href="/code-blog/favicon.png">
 
     <link rel="stylesheet" type="text/css" href="/code-blog/libs/awesome/css/all.min.css">
@@ -310,12 +311,12 @@
 
 
 
-<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/0.jpg')">
+<div class="bg-cover pd-header post-cover" style="background-image: url('/code-blog/medias/featureimages/14.jpg')">
     <div class="container" style="right: 0px;left: 0px;">
         <div class="row">
             <div class="col s12 m12 l12">
                 <div class="brand">
-                    <h1 class="description center-align post-title">jvm-年轻代、老年代垃圾回收算法</h1>
+                    <h1 class="description center-align post-title">jvm-垃圾回收器之ParNew和CMS</h1>
                 </div>
             </div>
         </div>
@@ -460,7 +461,7 @@
                 
                 <div class="post-date info-break-policy">
                     <i class="far fa-calendar-minus fa-fw"></i>发布日期:&nbsp;&nbsp;
-                    2021-11-18
+                    2021-11-19
                 </div>
                 
 
@@ -484,48 +485,89 @@
 
         <div class="card-content article-card-content">
             <div id="articleContent">
-                <h1 id="年轻代垃圾回收算法"><a href="#年轻代垃圾回收算法" class="headerlink" title="年轻代垃圾回收算法"></a>年轻代垃圾回收算法</h1><h2 id="年轻代的内存分为两块"><a href="#年轻代的内存分为两块" class="headerlink" title="年轻代的内存分为两块"></a>年轻代的内存分为两块</h2><p>如果根据GC roots 标记哪些对象可以被垃圾回收 就直接对那块内存区域中的对象进行垃圾回收，容易造成内区东一块 西一块，大量的内存碎片。</p>
-<p>内存碎片会造成内存浪费。容易导致没有足够的空间来分配新的对象。很多内存碎片没法使用。</p>
-<p>可以把新生代的内存区域分为两块，把存活的对象转移到另一块空白的内存中。然后把需要清理的垃圾一块清理掉，这样可以避免内存碎片的产生。</p>
-<p><strong>按照这种方式，两块内存区域这么重复循环使用</strong>。</p>
-<p><strong>缺点：只有一半的内存空间可以使用，对内存使用效率太低了。</strong></p>
-<h2 id="复制算法的优化-Eden-Survivor"><a href="#复制算法的优化-Eden-Survivor" class="headerlink" title="复制算法的优化 Eden Survivor"></a>复制算法的优化 Eden Survivor</h2><p>一次垃圾回收过后，大部分对象都要回收。</p>
-<p><strong>这里存在一个假设，每次只有少量对象可以存活下来。</strong></p>
-<p>可以把年轻代分为80%的Eden， 两个20%的Survivor区域</p>
-<p>刚开始对象都是分配在Eden，如果Eden满了，就会触发垃圾回收。</p>
-<p>Eden存活对象一次性转移到Survivor，Survivor存放的是上一次Young GC后婚活的对象。</p>
-<p>如果Eden又满了，Eden再一次Young GC存活的对象和上一次存活的对象转移到另一块Survivor中。 </p>
-<p><strong>好处：只有10%的内存空间是被闲置的。90%的内存空间都是被利用的。</strong></p>
-<p>当新生代的对象躲过了新生代垃圾回收15次（这个参数可以自己设定）</p>
-<p>未来能更好适应不同程序的内存状况，虚拟机并不总是要求对象的年龄必须到达阈值，才能晋升老年代。</p>
-<p><strong>动态对象年龄判定</strong>：如果Survivor区域中相同年龄所有对象大小的综合大于Survivor内存大小的一半，年龄大于等于该年龄的对象就可以直接进入老年代。</p>
-<p><strong>大对象直接进入老年代</strong>：-XX:PretenureSizeThreshold 避免大对象在内存里来回复制，耗费时间</p>
-<p><strong>经历过多次Young GC之后，对象变得很多，无法放入另一块Survivor，这个时候需要把这些对象直接转移到老年代</strong>。</p>
-<h2 id="老年代空间分配担保原则"><a href="#老年代空间分配担保原则" class="headerlink" title="老年代空间分配担保原则"></a>老年代空间分配担保原则</h2><p>如果年轻代大量对象存活下来，Survivor区域放不去，老年代区域也放不下该咋办？</p>
-<p><strong>执行YoungGC之前，JVM会检查老年代的可用内存空间大小是否大于年轻代所有对象的总大小。</strong></p>
+                <h1 id="垃圾回收器"><a href="#垃圾回收器" class="headerlink" title="垃圾回收器"></a>垃圾回收器</h1><p>ParNew、CMS和G1三种垃圾回收</p>
+<ol>
+<li><p>Serial和Serial Old垃圾回收器：分别用来回收新生代和老年代的垃圾对象 .工作原理就是单线程运行，垃圾回收的时候会停止我们自己写的系统的其他工作线程，让我们系统直接卡死不动，然 后让他们垃圾回收，这个现在一般写后台Java系统几乎不用。</p>
+</li>
+<li><p>ParNew和CMS垃圾回收器：ParNew现在一般都是用在新生代的垃圾回收器，CMS是用在老年代的垃圾回收器，他们都是多线程并发的机制，性能更好，现在一般是线上生产系统的标配组合</p>
+</li>
+<li><p>G1垃圾回收器：统一收集新生代 和老年代，采用了更加优秀的算法和设计机制</p>
+</li>
+</ol>
+<h3 id="最常用的新生代垃圾回收器-ParNew"><a href="#最常用的新生代垃圾回收器-ParNew" class="headerlink" title="最常用的新生代垃圾回收器 ParNew"></a>最常用的新生代垃圾回收器 ParNew</h3><p>特点是多线程垃圾回收机制</p>
+<p>ParNew垃圾回收器如果一旦在合适的时机执行Young GC的时候，<strong>就会把系统程序的工作线程全部停掉</strong>，禁止程序继续运行创建新的对象，然后自己就用多个垃圾回收线程去进行垃圾回收。</p>
+<h1 id="ParNew"><a href="#ParNew" class="headerlink" title="ParNew"></a>ParNew</h1><p>ParNew是最常用的新生代垃圾回收器</p>
+<p><strong>在垃圾回收的时候，会把系统程序所有的工作线程全部停掉,可以多线程进行垃圾回收</strong>。</p>
+<p>Serial是主打单线程回收。</p>
+<p>大部分机器是多核的，垃圾回收的时候可以充分利用CPU的资源。</p>
+<p>默认给自己设置的垃圾回收线程数量和CPU核数一样。</p>
+<p>windows 机器  或者 CPU核心少的机器,建议使用Serial垃圾回收器，避免程序多开性能开销。</p>
+<p>部署程序用的多核服务器建议使用ParNew</p>
+<h1 id="CMS"><a href="#CMS" class="headerlink" title="CMS"></a>CMS</h1><p><strong>老年代垃圾回收器</strong></p>
+<p><strong>采用的是标记清理算法</strong></p>
+<p>发生时机:</p>
 <ul>
-<li>如果老年代可用内存空间大小大于新生代所有对象，可以放心Young GC 。大不了全部放在老年代里。</li>
-<li>如果发现老年代空间不够：<ul>
-<li>查看-XX:- HandlePromotionFailure 参数是否设置</li>
-<li>如果参数已经被设置了，若<strong>老年代的内存大小大于之前每一次Young GC后进入老年代的对象的平均大小</strong>，那么老年代空间是够的。</li>
-<li>参数没有设置或者参数设置发现还是不够，就会触发Full GC</li>
+<li>假设因为老年代内存空间小于了历次Young GC后升入老年代对象的平均大小，判断Young GC有风险，可能就会提前触发Full GC回收老年代的垃圾对象</li>
+<li>或者是一次Young GC后的对象太多了，都要升入老年代，发现空间不足，出发了一次老年代的Full GC</li>
+</ul>
+<p>标记-清理算法 先通过追踪GC Roots的方法，看看各个对象是否被GC Roots给引用了，如果是的话，那就是存活对象，否则就是垃圾对象。是会造成很多内存碎片</p>
+<p><strong>CMS垃圾回收器采取的是垃圾回收线程和系统工作线程尽量同时执行的模式来处理的</strong></p>
+<h2 id="如何实现一边工作的同时进行垃圾回收"><a href="#如何实现一边工作的同时进行垃圾回收" class="headerlink" title="如何实现一边工作的同时进行垃圾回收"></a>如何实现一边工作的同时进行垃圾回收</h2><h3 id="CMS在执行一次垃圾回收的过程可以氛围4个阶段："><a href="#CMS在执行一次垃圾回收的过程可以氛围4个阶段：" class="headerlink" title="CMS在执行一次垃圾回收的过程可以氛围4个阶段："></a>CMS在执行一次垃圾回收的过程可以氛围4个阶段：</h3><ul>
+<li><p>初始标记</p>
+<ul>
+<li><p>这个阶段，会让系统的工作线程全部停止。</p>
+</li>
+<li><p>标记出来所有GC roots直接引用的对象</p>
+</li>
+<li><p>方法的局部变量和类的静态变量是GC roots, 但是类的实例变量不是</p>
+</li>
+<li><p>虽然暂停了一切工作线程，但是影响不大，因为它的速度很快，仅仅只是标记。</p>
+</li>
+<li><p>java中可以作为GC roots的对象</p>
+<ul>
+<li><p>虚拟机栈（栈帧中的本地变量表）中引用的对象</p>
+</li>
+<li><p>方法区中类静态属性引用的对象</p>
+</li>
+<li><p>方法区中常量引用的对象</p>
+</li>
+<li><p>本地方法栈中JNI（即一般说的native方法）中引用的对象</p>
+</li>
 </ul>
 </li>
 </ul>
-<h2 id="Young-GC满足条件"><a href="#Young-GC满足条件" class="headerlink" title="Young GC满足条件"></a>Young GC满足条件</h2><p>两个步骤：</p>
+</li>
+<li><p>并发标记</p>
 <ul>
-<li>老年代内存&gt;新生代</li>
-<li>老年代内存&gt;Young GC转移平均大小</li>
+<li>会让系统线程可以随意创建各种新对象</li>
+<li>在运行期间可能会创建新的存活对象，也可能会让部分存活对象失去引用，变成垃圾对象。在这个过程中，垃圾回收线程，会尽可能的对已有的对象进行GC Roots追踪</li>
+<li><strong>对老年代所有对象进行GC Roots追踪，其实是最耗时的</strong></li>
+<li>他需要追踪所有对象是否从根源上被GC Roots引用了，但是这个最耗时的阶段，是跟<strong>系统程序并发运行</strong>的，所以其实这个阶段不会对系统运行造成影响的</li>
 </ul>
-<p>这两个条件都满足了。可以尝试Young GC</p>
-<h2 id="Young-GC的可能结果"><a href="#Young-GC的可能结果" class="headerlink" title="Young GC的可能结果"></a>Young GC的可能结果</h2><ol>
-<li>YoungGC 过后，年轻代所有存活对象是小于Survivor区域大小。那么存活对象进入Survivor区域</li>
-<li>YoungGC之后，年轻代所有存活对象是大于Survivor区域大小的，但是小于老年代区域。就进入老年代</li>
-<li>YoungGC之后，年轻代&gt;survivor 而且老年代也不够。触发FullGC</li>
-</ol>
-<p>Full GC 不仅对老年代进行垃圾回收，也会对年轻代进行垃圾回收。Full GC失败就会报OOM异常。</p>
-<h1 id="老年代垃圾回收算法"><a href="#老年代垃圾回收算法" class="headerlink" title="老年代垃圾回收算法"></a>老年代垃圾回收算法</h1><p>老年代采用的是<strong>标记整理</strong>算法<br>老年代会标记哪些对象可以存活，然后进行移动，防止出现过多的内存碎片，最后一次性把垃圾对象都回收掉。老年代的垃圾回收算法很耗时。</p>
-<p>如果系统频繁进行老年代的垃圾回收，会严重影响系统性能，出现系统卡顿的情况。</p>
+</li>
+<li><p>重新标记</p>
+<ul>
+<li><p>在第二个阶段里面，一边标记存活对象和垃圾对象，一边系统不停运行创建新对象，让老对象变成垃圾对象。<strong>第二阶段结束之后，有很多存活对象和垃圾对象，没有被标记</strong>。</p>
+</li>
+<li><p>此时，暂停所有系统工程线程 </p>
+</li>
+<li><p>重新标记下在第二阶段里新创建的一些对象，还有一些已有对象可能失去引用变成垃圾的情况</p>
+</li>
+<li><p>这个重新标记的阶段，是速度很快的，他其实就是对在第二阶段中被系统程序运行变动过的少数对象进行标记，所以运行速度很快</p>
+</li>
+</ul>
+</li>
+<li><p>并发清理</p>
+<ul>
+<li>恢复系统程序的运行</li>
+<li>清理掉之前标记为垃圾的对象</li>
+<li>这个阶段很耗时，但是跟系统程序并发运行。其实也不影响系统程序的执行</li>
+</ul>
+</li>
+</ul>
+<h2 id="CMS性能分析"><a href="#CMS性能分析" class="headerlink" title="CMS性能分析"></a>CMS性能分析</h2><p>最耗时的，其实就是对老年代全部对相关进行GC Roots追踪，标记出来到底哪些可以回收，然后就是对各种垃圾对象从内存里清理掉，这是最耗时的。</p>
+<p>但是他的第二阶段和第四阶段，都是和系统程序并发执行的，所以基本这两个最耗时的阶段对性能影响不大。</p>
+<p> 第一个阶段和第三个阶段是需要暂停所有系统工作线程的，但是这两个阶段都是简单的标记而已，速度非常的快，所以基本上对系统运行影响不大。</p>
 
                 
             </div>
@@ -552,7 +594,7 @@
                     </i>
                 </span>
                 <span class="reprint-info">
-                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm3/">https://dutlzn.github.io/code-blog/code-blog/2021/11/18/jvm3/</a>
+                    <a href="https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm4/">https://dutlzn.github.io/code-blog/code-blog/2021/11/19/jvm4/</a>
                 </span>
             </div>
             <div class="reprint__notice">
@@ -767,9 +809,10 @@
 <article id="prenext-posts" class="prev-next articles">
     <div class="row article-row">
         
-        <div class="article col s12 m6" data-aos="fade-up">
+        <div class="article col s12 m6" data-aos="fade-up" data-aos="fade-up">
             <div class="article-badge left-badge text-color">
-                <i class="fas fa-chevron-left"></i>&nbsp;上一篇</div>
+                <i class="far fa-dot-circle"></i>&nbsp;本篇
+            </div>
             <div class="card">
                 <a href="/code-blog/2021/11/19/jvm4/">
                     <div class="card-image">
@@ -787,9 +830,9 @@
                         
                     </div>
                     <div class="publish-info">
-                        <span class="publish-date">
-                            <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
-                        </span>
+                            <span class="publish-date">
+                                <i class="far fa-clock fa-fw icon-date"></i>2021-11-19
+                            </span>
                         <span class="publish-author">
                             
                             <i class="fas fa-bookmark fa-fw icon-category"></i>
@@ -802,6 +845,7 @@
                         </span>
                     </div>
                 </div>
+
                 
                 <div class="card-action article-tags">
                     
@@ -824,13 +868,13 @@
                 下一篇&nbsp;<i class="fas fa-chevron-right"></i>
             </div>
             <div class="card">
-                <a href="/code-blog/2021/11/18/jvm2/">
+                <a href="/code-blog/2021/11/18/jvm3/">
                     <div class="card-image">
                         
                         
-                        <img src="/code-blog/medias/featureimages/19.jpg" class="responsive-img" alt="JVM-垃圾回收机制">
+                        <img src="/code-blog/medias/featureimages/0.jpg" class="responsive-img" alt="jvm-年轻代、老年代垃圾回收算法">
                         
-                        <span class="card-title">JVM-垃圾回收机制</span>
+                        <span class="card-title">jvm-年轻代、老年代垃圾回收算法</span>
                     </div>
                 </a>
                 <div class="card-content article-content">
